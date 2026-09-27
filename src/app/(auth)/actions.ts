@@ -7,7 +7,6 @@ import type { ActionState } from '@/lib/auth-types'
 import { PENDING_MESSAGE, EMAIL_RE, safeNext } from '@/lib/auth-types'
 
 export type { ActionState }
-export { PENDING_MESSAGE }
 
 /* ------------------------------------------------------------------ */
 /* REGISTER                                                            */

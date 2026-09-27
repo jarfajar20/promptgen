@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { useActionState } from 'react'
-import { loginAction, PENDING_MESSAGE, type ActionState } from '@/app/(auth)/actions'
+import { loginAction, type ActionState } from '@/app/(auth)/actions'
+import { PENDING_MESSAGE } from '@/lib/auth-types'
 import { Banner, Field, SubmitButton } from '@/components/ui'
 
 export function LoginForm({ next }: { next?: string }) {
