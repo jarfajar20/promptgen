@@ -1,14 +1,36 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions }
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
+  // Jika Supabase belum dikonfigurasi (env kosong), jangan crash.
+  // Biarkan halaman publik tampil; halaman terproteksi diarahkan ke /login.
+  if (!isSupabaseConfigured()) {
+    const { pathname } = request.nextUrl
+    const isProtected =
+      pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/admin') ||
+      pathname.startsWith('/pending')
+
+    if (isProtected) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('next', pathname)
+      return NextResponse.redirect(url)
+    }
+    return response
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL!,
+    SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll: () => request.cookies.getAll(),
@@ -24,7 +46,14 @@ export async function updateSession(request: NextRequest) {
   )
 
   // WAJIB: getUser() memvalidasi token ke Auth server & me-refresh cookie.
-  const { data: { user } } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // Supabase unreachable / misconfig — anggap belum login, jangan crash.
+    user = null
+  }
 
   const { pathname } = request.nextUrl
   const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/admin')

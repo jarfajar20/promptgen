@@ -1,9 +1,13 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 export const dynamic = 'force-dynamic'
 
 export default async function RootPage() {
+  // Jika Supabase belum dikonfigurasi, arahkan ke /login agar tidak crash.
+  if (!isSupabaseConfigured()) redirect('/login')
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
